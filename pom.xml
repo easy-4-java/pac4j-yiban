@@ -6,7 +6,7 @@
 	<groupId>io.github.hiwepy</groupId>
 	<artifactId>pac4j-yiban</artifactId>
 	<description>Pac4j For Yiban</description>
-	<version>1.0.0-SNAPSHOT</version>
+	<version>1.0.x.20260630-SNAPSHOT</version>
 	<name>${project.groupId}:${project.artifactId}</name>
    	<url>https://github.com/hiwepy/${project.artifactId}</url>
 	<packaging>jar</packaging>
