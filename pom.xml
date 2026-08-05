@@ -383,7 +383,7 @@
         <maven-source-plugin.version>3.3.1</maven-source-plugin.version>
 		<maven-nexus-staging-plugin.version>1.6.8</maven-nexus-staging-plugin.version>
 		<lombok.version>1.18.46</lombok.version>
-		<pac4j-uniauth.version>1.0.0-SNAPSHOT</pac4j-uniauth.version>
+		<pac4j-uniauth.version>3.0.x.20260630-SNAPSHOT</pac4j-uniauth.version>
 	</properties>
 	
 	<dependencyManagement>
