@@ -511,7 +511,7 @@
         <maven-nexus-staging-plugin.version>1.7.0</maven-nexus-staging-plugin.version>
         <!-- Dependency versions -->
         <lombok.version>1.18.46</lombok.version>
-        <pac4j-uniauth.version>3.0.x.20260630-SNAPSHOT</pac4j-uniauth.version>
+        <easy4j-pac4j-uniauth.version>3.0.x.20260630-SNAPSHOT</easy4j-pac4j-uniauth.version>
     </properties>
 
     <!-- 依赖版本统一管理（dependencyManagement） -->
@@ -527,7 +527,7 @@
             <dependency>
                 <groupId>io.github.easy4j</groupId>
                 <artifactId>pac4j-uniauth</artifactId>
-                <version>${pac4j-uniauth.version}</version>
+                <version>${easy4j-pac4j-uniauth.version}</version>
             </dependency>
             <!-- For Slf4j -->
             <dependency>
