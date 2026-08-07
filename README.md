@@ -4,6 +4,8 @@
 
 [![Java](https://img.shields.io/badge/Java-8-orange)](https://github.com/easy-4-java/pac4j-yiban) [![License](https://img.shields.io/badge/license-Apache%202.0-green)](./LICENSE)
 
+pac4j-yiban is a pac4j 5.0.x extension that adds YiBan (易班) Light App
+
 ## Table of Contents
 
 - [1. Project Overview](#1-project-overview)
