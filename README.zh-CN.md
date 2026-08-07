@@ -4,6 +4,8 @@
 
 [![Java](https://img.shields.io/badge/Java-17-orange)](https://github.com/easy-4-java/pac4j-yiban) [![License](https://img.shields.io/badge/license-Apache%202.0-green)](./LICENSE)
 
+pac4j-yiban 是 pac4j 5.0.x 的扩展组件，为 pac4j 增加易班轻应用认证能力。
+
 ## 目录
 
 - [1. 项目概述](#1-项目概述)
