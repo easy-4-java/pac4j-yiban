@@ -26,34 +26,70 @@ import com.alibaba.fastjson.JSONObject;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * Access Token profile definition.
+ * Profile definition that extracts a {@link YiBanLightAppTokenProfile} from
+ * the JSON response body returned by the YiBan {@code /user/real_me} endpoint.
  *
- * @author zd
+ * <p>Expected JSON structure:</p>
+ * <pre>{@code
+ * {
+ *   "status": "success",
+ *   "info": {
+ *     "yb_userid": "7400172",
+ *     "yb_username": "Zhang San",
+ *     "yb_studentid": "41364",
+ *     ...
+ *   }
+ * }
+ * }</pre>
+ *
+ * @author [@Loong Wan](https://github.com/loong10k)
+ * @since 3.0.0
+ * @see YiBanLightAppTokenProfile
+ * @see YiBanLightAppTokenAuthenticator
  */
 @Slf4j
 @SuppressWarnings("all")
 public class YiBanLightAppTokenProfileDefinition extends TokenProfileDefinition<YiBanLightAppTokenProfile, YiBanLightAppToken> {
 
+    /**
+     * Create a profile definition with the default profile factory.
+     */
     public YiBanLightAppTokenProfileDefinition() {
         super();
     }
 
-    public YiBanLightAppTokenProfileDefinition(final ProfileFactory<YiBanLightAppTokenProfile> profileFactory) {
+    /**
+     * Create a profile definition with a custom profile factory.
+     *
+     * @param profileFactory the factory used to instantiate profile objects
+     */
+    public YiBanLightAppTokenProfileDefinition(final ProfileFactory profileFactory) {
         super(profileFactory);
     }
 
-
+    /**
+     * Return the profile URL for the given access token.
+     *
+     * <p>This implementation always returns {@code null} because the
+     * authenticator hard-codes the YiBan {@code /user/real_me} URL.</p>
+     *
+     * @param webContext the current web context (unused)
+     * @param yiBanLightAppToken the access token (unused)
+     * @return always {@code null}
+     */
     @Override
     public String getProfileUrl(WebContext webContext, YiBanLightAppToken yiBanLightAppToken) {
         return null;
     }
 
     /**
-     * Extract the user profile from the response (JSON, XML...) of the profile url.
-     * TODO  解析用户属性信息
+     * Extract a {@link YiBanLightAppTokenProfile} from the JSON response body
+     * returned by the YiBan real-name API.
      *
-     * @param body the response body
-     * @return the returned profile
+     * @param body the JSON response body from YiBan
+     * @return the populated user profile
+     * @throws CredentialsException if the response status is not
+     *         {@code "success"} or required fields are missing
      */
     @Override
     public YiBanLightAppTokenProfile extractUserProfile(String body) {
@@ -62,25 +98,17 @@ public class YiBanLightAppTokenProfileDefinition extends TokenProfileDefinition<
         String studentIdStr = "yb_studentid";
         String usernameStr = "yb_username";
         YiBanLightAppTokenProfile profile = new YiBanLightAppTokenProfile();
-        /*
-        {"status":"success","info":
-            {"yb_userid":"7400172","yb_username":"\u91d1\u9633","yb_usernick":"\u91d1\u9633",
-            "yb_sex":"M","yb_money":"1251","yb_exp":"904","yb_userhead":"http:\/\/img02.fs.yiban.cn\/7400172\/avatar\/user\/200",
-            "yb_schoolid":"34270","yb_schoolname":"\u676d\u5dde\u7535\u5b50\u79d1\u6280\u5927\u5b66\u4fe1\u606f\u5de5\u7a0b\u5b66\u9662",
-            "yb_regtime":"2016-01-07 01:23:48","yb_realname":"\u91d1\u9633","yb_birthday":"1987-12-26","yb_studentid":"41364","yb_identity":"\u8f85\u5bfc\u5458"}
-         }
-         */
         JSONObject realMeBody = JSONObject.parseObject(body);
         if (success.equals(realMeBody.getString(status))) {
             JSONObject infoObject = realMeBody.getJSONObject("info");
-            CommonHelper.assertNotNull("易班轻应用获取用户认证解析信息", infoObject);
-            log.info("易班轻应用获取用户认证解析信息:{}",infoObject);
+            CommonHelper.assertNotNull("YiBan profile info object", infoObject);
+            log.info("YiBan profile info: {}", infoObject);
             String studentId = infoObject.getString(studentIdStr);
-            CommonHelper.assertNotNull("易班轻应用获取用户学工号", studentId);
-            log.info("易班轻应用获取用户学工号:{}",studentId);
+            CommonHelper.assertNotNull("YiBan student ID", studentId);
+            log.info("YiBan student ID: {}", studentId);
             String username = infoObject.getString(usernameStr);
-            CommonHelper.assertNotNull("易班轻应用获取用户实名认证名", username);
-            log.info("易班轻应用获取用户实名认证名:{}",username);
+            CommonHelper.assertNotNull("YiBan username", username);
+            log.info("YiBan username: {}", username);
             profile.setPid(studentId);
             profile.setId(studentId);
             profile.setUserid(studentId);
