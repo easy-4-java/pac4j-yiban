@@ -18,8 +18,11 @@ package org.pac4j.yiban;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.Optional;
 
+import org.pac4j.core.context.CallContext;
 import org.pac4j.core.context.WebContext;
+import org.pac4j.core.credentials.Credentials;
 import org.pac4j.core.credentials.TokenCredentials;
 import org.pac4j.core.exception.CredentialsException;
 import org.pac4j.core.exception.HttpCommunicationException;
@@ -33,83 +36,120 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 
 /**
- * 易班轻应用token认证解析
+ * Authenticator for YiBan light-application tokens.
+ *
+ * <p>This authenticator decrypts the {@code verify_request} parameter using
+ * AES, checks whether the user has authorised the application, extracts the
+ * OAuth access token, and then calls the YiBan {@code /user/real_me} endpoint
+ * to retrieve the user's real-name profile.</p>
+ *
+ * <p>Decrypted JSON structure:</p>
+ * <pre>{@code
+ * {
+ *   "visit_time": 1234567890,
+ *   "visit_user": { "userid": "..." },
+ *   "visit_oauth": {
+ *     "access_token": "...",
+ *     "token_expires": 1234567890
+ *   }
+ * }
+ * }</pre>
+ *
+ * @author [@Loong Wan](https://github.com/loong10k)
+ * @since 3.0.0
+ * @see YiBanLightAppTokenClient
+ * @see YiBanLightAppTokenProfileDefinition
+ * @see AESDecoder
  */
 @SuppressWarnings("all")
 public class YiBanLightAppTokenAuthenticator extends TokenAuthenticator<YiBanLightAppTokenProfile, YiBanLightAppToken> {
 
+    /** URL of the YiBan real-name user info endpoint. */
     private String realMe = "https://openapi.yiban.cn/user/real_me";
 
-    /**
-     * 应用的AppID
-     */
+    /** The application's AppID registered on the YiBan platform. */
     private String appId;
 
-    /**
-     * 应用的AppSecret
-     */
+    /** The application's AppSecret registered on the YiBan platform. */
     private String appSecret;
 
-
+    /**
+     * Create an authenticator with the given application credentials.
+     *
+     * @param appId     the YiBan application ID
+     * @param appSecret the YiBan application secret
+     */
     public YiBanLightAppTokenAuthenticator(String appId, String appSecret) {
         this.appId = appId;
         this.appSecret = appSecret;
     }
 
+    /**
+     * Initialise the authenticator by setting the default profile definition.
+     *
+     * @param forceReinit whether to force re-initialisation even if already
+     *                    initialised
+     */
     @Override
-    protected void internalInit() {
+    protected void internalInit(boolean forceReinit) {
         defaultProfileDefinition(new YiBanLightAppTokenProfileDefinition(x -> new YiBanLightAppTokenProfile()));
-        super.internalInit();
+        super.internalInit(forceReinit);
     }
 
+    /**
+     * Validate the token credentials by decrypting the YiBan
+     * {@code verify_request}, checking authorisation, and fetching the user
+     * profile.
+     *
+     * @param callContext the call context containing the web context
+     * @param credentials the raw credentials (must be {@link TokenCredentials})
+     * @return an {@link Optional} containing the credentials with the user
+     *         profile set
+     * @throws CredentialsException if the credentials are missing, the user
+     *         has not authorised the application, or the token is invalid
+     */
     @Override
-    public void validate(final TokenCredentials credentials, final WebContext context) {
-        String flag = "false";
+    public Optional<Credentials> validate(CallContext callContext, Credentials credentials) {
         if (credentials == null) {
             throw new CredentialsException("No credential");
         }
-		/*
-		失败
-		{
-		  "visit_time":访问unix时间戳,
-		  "visit_user":{
-			"userid":"易班用户ID"
-		  },
-		  "visit_oauth":false
-		}
-		成功
-		{
-		  "visit_time":访问unix时间戳,
-		  "visit_user":{
-			"userid":"易班用户ID",
-			"username":"易班用户名",
-			"usernick":"易班用户昵称",
-			"usersex":"易班用户性别"
-		  },
-		  "visit_oauth":{
-			"access_token":"授权凭证",
-			"token_expires":"有效unix时间戳"
-		  },
-		}
-		 */
-        JSONObject jsonObject = parse(credentials);
-        String visitOauth = jsonObject.getString("visit_oauth");
-        if (visitOauth.equals(flag)) {
-            throw new CredentialsException("易班轻应用用户未授权");
+        if (!(credentials instanceof TokenCredentials)) {
+            throw new CredentialsException("Unsupported credential type: " + credentials.getClass().getName());
         }
-        //用户已授权,开始查询用户实名信息数据接口
+        TokenCredentials tokenCredentials = (TokenCredentials) credentials;
+
+        JSONObject jsonObject = parse(tokenCredentials);
+        String visitOauth = jsonObject.getString("visit_oauth");
+        if ("false".equals(visitOauth)) {
+            throw new CredentialsException("YiBan light-app user has not authorised");
+        }
+        // User has authorised -- fetch real-name info
         JSONObject oauthObject = jsonObject.getJSONObject("visit_oauth");
         CommonHelper.assertNotNull("oauthObject", oauthObject);
         String accessToken = oauthObject.getString("access_token");
-        CommonHelper.assertNotNull("易班轻应用accessToken", accessToken);
-        String body = retrieveUserProfileFromRestApi(context, new YiBanLightAppToken(accessToken), realMe);
-        CommonHelper.assertNotNull("易班轻应用获取用户认证信息", body);
+        CommonHelper.assertNotNull("YiBan light-app accessToken", accessToken);
+        String body = retrieveUserProfileFromRestApi(callContext.webContext(), new YiBanLightAppToken(accessToken), realMe);
+        CommonHelper.assertNotNull("YiBan light-app user profile response", body);
         logger.info("body:{}", body);
         final YiBanLightAppTokenProfile profile = getProfileDefinition().extractUserProfile(body);
         logger.debug("profile: {}", profile);
-        credentials.setUserProfile(profile);
+        tokenCredentials.setUserProfile(profile);
+        return Optional.of(tokenCredentials);
     }
 
+    /**
+     * Retrieve the user profile from the YiBan REST API.
+     *
+     * <p>This override appends the {@code access_token} as a query parameter
+     * and performs a simple GET request (without custom headers/params).</p>
+     *
+     * @param context     the web context
+     * @param accessToken the YiBan access token
+     * @param profileUrl  the REST API URL
+     * @return the response body, or {@code null} on authentication or
+     *         unexpected HTTP errors
+     * @throws HttpCommunicationException if an I/O error occurs
+     */
     @Override
     protected String retrieveUserProfileFromRestApi(WebContext context, YiBanLightAppToken accessToken, String profileUrl) {
         logger.debug("accessToken: {} / profileUrl: {}", accessToken.getRawResponse(), profileUrl);
@@ -139,11 +179,25 @@ public class YiBanLightAppTokenAuthenticator extends TokenAuthenticator<YiBanLig
         }
     }
 
+    /**
+     * Create a {@link YiBanLightAppToken} from the given credentials.
+     *
+     * @param credentials the token credentials
+     * @return a new {@link YiBanLightAppToken} wrapping the raw token string
+     */
     @Override
     protected YiBanLightAppToken getAccessToken(TokenCredentials credentials) {
         return new YiBanLightAppToken(credentials.getToken());
     }
 
+    /**
+     * Parse and decrypt the {@code verify_request} token into a JSON object.
+     *
+     * @param credentials the token credentials containing the encrypted
+     *                    verify_request
+     * @return the decrypted JSON object
+     * @throws CredentialsException if the token is blank or decryption fails
+     */
     private JSONObject parse(TokenCredentials credentials) {
         String verify_request = credentials.getToken();
         if (CommonHelper.isBlank(verify_request)) {
@@ -160,10 +214,20 @@ public class YiBanLightAppTokenAuthenticator extends TokenAuthenticator<YiBanLig
         return jsonObject;
     }
 
+    /**
+     * Return the YiBan application ID.
+     *
+     * @return the application ID
+     */
     public String getAppId() {
         return appId;
     }
 
+    /**
+     * Return the YiBan application secret.
+     *
+     * @return the application secret
+     */
     public String getAppSecret() {
         return appSecret;
     }

@@ -18,11 +18,26 @@ package org.pac4j.yiban;
 import org.pac4j.core.ext.profile.Token;
 
 /**
- * @author zd
+ * Represents an OAuth access token obtained from the YiBan light-application
+ * platform.
+ *
+ * <p>The raw response of this token is the {@code access_token} string that
+ * can be used to call YiBan Open APIs (e.g.&nbsp;the {@code /user/real_me}
+ * endpoint).</p>
+ *
+ * @author [@Loong Wan](https://github.com/loong10k)
+ * @since 3.0.0
+ * @see YiBanLightAppTokenAuthenticator
+ * @see YiBanLightAppTokenClient
  */
 @SuppressWarnings("serial")
 public class YiBanLightAppToken extends Token {
 
+    /**
+     * Create a new token with the given raw access-token string.
+     *
+     * @param rawResponse the OAuth access token returned by YiBan
+     */
     protected YiBanLightAppToken(String rawResponse) {
         super(rawResponse);
     }
