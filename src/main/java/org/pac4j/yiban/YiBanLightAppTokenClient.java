@@ -24,31 +24,61 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 
 /**
- * 易班轻应用认证登录客户端
- * @author zd
+ * YiBan light-application direct client.
+ *
+ * <p>This client handles YiBan light-application authentication by reading
+ * the {@code verify_request} parameter from the HTTP request, validating it
+ * through the {@link YiBanLightAppTokenAuthenticator}, and creating a
+ * {@link YiBanLightAppTokenProfile}.</p>
+ *
+ * <p>The login URL returned by {@link #getLoginUrl()} points to the YiBan
+ * OAuth authorisation page with the configured {@code client_id}.</p>
+ *
+ * @author [@Loong Wan](https://github.com/loong10k)
+ * @since 3.0.0
+ * @see YiBanLightAppTokenAuthenticator
+ * @see YiBanTokenParameterExtractor
  */
 @SuppressWarnings("all")
 public class YiBanLightAppTokenClient extends TokenClient<YiBanLightAppTokenProfile, YiBanLightAppToken> {
 
-    /**
-     * 应用的AppID
-     */
+    /** The application's client_id (AppID) registered on the YiBan platform. */
     private String appId;
 
+    /**
+     * Create a client with the given application ID.
+     *
+     * @param appId the YiBan application client_id
+     */
     public YiBanLightAppTokenClient(String appId) {
         this.appId = appId;
     }
 
+    /**
+     * Initialise the client by wiring up the default profile creator and
+     * credential extractor.
+     *
+     * @param forceReinit whether to force re-initialisation
+     */
     @Override
-    protected void clientInit() {
-        defaultProfileCreator(new TokenProfileCreator());
-        defaultCredentialsExtractor(new YiBanTokenParameterExtractor(this.getParameterName(), this.isSupportGetRequest(), this.isSupportPostRequest()));
+    protected void internalInit(boolean forceReinit) {
+        setProfileCreatorIfUndefined(new TokenProfileCreator());
+        setCredentialsExtractorIfUndefined(new YiBanTokenParameterExtractor(this.getParameterName(), this.isSupportGetRequest(), this.isSupportPostRequest()));
         // ensures components have been properly initialized
         CommonHelper.assertNotNull("credentialsExtractor", getCredentialsExtractor());
         CommonHelper.assertNotNull("authenticator", getAuthenticator());
         CommonHelper.assertNotNull("profileCreator", getProfileCreator());
     }
 
+    /**
+     * Return the YiBan OAuth login URL.
+     *
+     * <p>The URL points to {@code https://oauth.yiban.cn/code/html} with the
+     * configured {@code client_id} and the callback URL (URL-encoded).</p>
+     *
+     * @return the full YiBan OAuth authorisation URL, or {@code null} if
+     *         URL-encoding fails
+     */
     @Override
     public String getLoginUrl() {
         try {
@@ -60,6 +90,11 @@ public class YiBanLightAppTokenClient extends TokenClient<YiBanLightAppTokenProf
         return null;
     }
 
+    /**
+     * Return the YiBan application client_id.
+     *
+     * @return the application ID
+     */
     public String getAppId() {
         return appId;
     }

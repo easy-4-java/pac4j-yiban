@@ -21,43 +21,49 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 
 /**
- * @author zd
+ * User profile for a YiBan light-application authenticated user.
+ *
+ * <p>After a successful authentication, this profile is populated with the
+ * real-name information returned by the YiBan {@code /user/real_me} endpoint,
+ * including the person-id ({@code pid}), name ({@code xm}), and other
+ * attributes.</p>
+ *
+ * @author [@Loong Wan](https://github.com/loong10k)
+ * @since 3.0.0
+ * @see YiBanLightAppTokenAuthenticator
+ * @see YiBanLightAppTokenProfileDefinition
  */
 @Data
-@EqualsAndHashCode(callSuper=false)
+@EqualsAndHashCode(callSuper = false)
 @SuppressWarnings("all")
 public class YiBanLightAppTokenProfile extends TokenProfile {
 
-    /**
-     * 用户 id
-     */
+    /** YiBan user identifier. */
     private String userid;
 
-    /**
-     * 统一的人员编号
-     */
+    /** Unified person number (e.g. student/staff ID). */
     private String pid;
 
-    /**
-     * 姓名
-     */
+    /** Real name of the user. */
     private String xm;
 
-    /**
-     * 人员类型：学生／教工
-     */
+    /** Person type: student or staff. */
     private String ptype;
 
-    /**
-     * 出生日期
-     */
+    /** Date of birth. */
     private String csrq;
 
-    /**
-     * 0 未初始化密码 1 已初始化密码
-     */
+    /** Password initialisation flag: 0 = not initialised, 1 = initialised. */
     private String flag;
 
+    /**
+     * Return the unique identifier of this profile.
+     *
+     * <p>Overrides the default to return the person-id ({@code pid}), which is
+     * the stable identifier assigned by the institution.</p>
+     *
+     * @return the person-id
+     */
     @Override
     public String getId() {
         return pid;
