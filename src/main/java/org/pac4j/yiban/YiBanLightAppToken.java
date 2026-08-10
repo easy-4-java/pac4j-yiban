@@ -25,7 +25,7 @@ import org.pac4j.core.ext.profile.Token;
  * can be used to call YiBan Open APIs (e.g.&nbsp;the {@code /user/real_me}
  * endpoint).</p>
  *
- * @author [@Loong Wan](https://github.com/loong10k)
+ * @author <a href="https://github.com/loong10k">Loong Wan</a>
  * @since 3.0.0
  * @see YiBanLightAppTokenAuthenticator
  * @see YiBanLightAppTokenClient

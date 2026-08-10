@@ -32,7 +32,7 @@ import java.util.Optional;
  * from the HTTP request and wraps it in a {@link TokenCredentials}. It
  * supports both GET and POST requests, configurable via the constructor.</p>
  *
- * @author [@Loong Wan](https://github.com/loong10k)
+ * @author <a href="https://github.com/loong10k">Loong Wan</a>
  * @since 3.0.0
  * @see YiBanLightAppTokenClient
  * @see YiBanLightAppTokenAuthenticator

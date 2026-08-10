@@ -26,7 +26,7 @@ import javax.crypto.spec.SecretKeySpec;
  * ciphertext.  It is used internally to decode the {@code verify_request}
  * parameter that YiBan passes to the application callback.</p>
  *
- * @author [@Loong Wan](https://github.com/loong10k)
+ * @author <a href="https://github.com/loong10k">Loong Wan</a>
  * @since 3.0.0
  */
 public class AESDecoder {

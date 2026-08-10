@@ -34,7 +34,7 @@ import java.net.URLEncoder;
  * <p>The login URL returned by {@link #getLoginUrl()} points to the YiBan
  * OAuth authorisation page with the configured {@code client_id}.</p>
  *
- * @author [@Loong Wan](https://github.com/loong10k)
+ * @author <a href="https://github.com/loong10k">Loong Wan</a>
  * @since 3.0.0
  * @see YiBanLightAppTokenAuthenticator
  * @see YiBanTokenParameterExtractor
